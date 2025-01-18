@@ -1,0 +1,11 @@
+{
+  "name": "@whalie/agent",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "dependencies": {
+    "@langchain/community": "^0.3.25",
+    "@langchain/core": "^0.3.31",
+    "langchain": "^0.3.11"
+  }
+}
