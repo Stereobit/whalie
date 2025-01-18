@@ -1,3 +1,5 @@
+import React from "react";
+
 function App() {
   return (
     <div className="fixed inset-0 overflow-hidden">

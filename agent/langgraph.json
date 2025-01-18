@@ -1,7 +1,7 @@
 {
   "dockerfile_lines": [],
   "graphs": {
-    "whalie": "./src/agent/graph.ts:graph"
+    "whalie": "./graph.ts:graph"
   },
   "env": ".env",
   "node_version": "20"
