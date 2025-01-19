@@ -30,12 +30,30 @@ const parseForm = async (
 
 // Helper function to transcribe audio using Whisper
 const transcribeAudio = async (audioPath: string) => {
-  const audioFile = fs.createReadStream(audioPath);
-  const transcriptionResponse = await openai.audio.transcriptions.create({
-    file: audioFile,
-    model: "whisper-1",
-  });
-  return transcriptionResponse.text;
+  // Check if file exists and is readable
+  try {
+    await fs.promises.access(audioPath, fs.constants.R_OK);
+    const stats = await fs.promises.stat(audioPath);
+
+    // Check if file is empty
+    if (stats.size === 0) {
+      throw new Error("Audio file is empty");
+    }
+
+    // Create a ReadStream with an explicit filename
+    const audioStream = fs.createReadStream(audioPath);
+    Object.defineProperty(audioStream, "name", {
+      value: "audio.wav",
+    });
+
+    const transcriptionResponse = await openai.audio.transcriptions.create({
+      file: audioStream,
+      model: "whisper-1",
+    });
+    return transcriptionResponse.text;
+  } catch (error) {
+    throw error;
+  }
 };
 
 // Helper function to get OpenAI response
@@ -85,7 +103,6 @@ export default async function handler(
       audioFile: audioFileName,
     });
   } catch (error) {
-    console.error("Error processing audio:", error);
     return res.status(500).json({
       success: false,
       error: "Error processing audio request",
