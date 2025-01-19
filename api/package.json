@@ -1,0 +1,32 @@
+{
+  "name": "@whalie/api",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@langchain/openai": "^0.3.17",
+    "@types/node": "^20.11.0",
+    "@types/react": "^18.2.48",
+    "@types/react-dom": "^18.2.18",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "elevenlabs-node": "^2.0.3",
+    "formidable": "^3.5.1",
+    "mic": "^2.1.2",
+    "next": "^14.1.0",
+    "openai": "^4.79.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "sound-play": "^1.1.0",
+    "wav": "^1.0.2"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/formidable": "^3.4.5",
+    "typescript": "^5.3.3"
+  }
+}
