@@ -1,15 +1,26 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useRecordVoice } from "./useRecordVoice";
 
 function App() {
-  const { recording, processing, startRecording, stopRecording } =
-    useRecordVoice();
+  const {
+    recording,
+    processing,
+    startRecording,
+    stopRecording,
+    sendTextMessage,
+  } = useRecordVoice();
+  const [hasGreeted, setHasGreeted] = useState(false);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === "Space" && !e.repeat && !recording && !processing) {
         e.preventDefault();
-        startRecording();
+        if (!hasGreeted) {
+          setHasGreeted(true);
+          sendTextMessage("Hi Whalie, it's me August");
+        } else {
+          startRecording();
+        }
       }
     };
 
@@ -27,7 +38,25 @@ function App() {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
     };
-  }, [recording, processing, startRecording, stopRecording]);
+  }, [
+    recording,
+    processing,
+    startRecording,
+    stopRecording,
+    hasGreeted,
+    sendTextMessage,
+  ]);
+
+  const handleButtonPress = () => {
+    if (!processing) {
+      if (!hasGreeted) {
+        setHasGreeted(true);
+        sendTextMessage("Hi Whalie, it's me August");
+      } else {
+        startRecording();
+      }
+    }
+  };
 
   return (
     <div className="fixed inset-0 overflow-hidden">
@@ -42,7 +71,7 @@ function App() {
       />
       <div className="relative z-10 h-screen w-screen flex items-center justify-end flex-col pb-24">
         <button
-          onMouseDown={!processing ? startRecording : undefined}
+          onMouseDown={handleButtonPress}
           onMouseUp={recording ? stopRecording : undefined}
           onMouseLeave={recording ? stopRecording : undefined}
           disabled={processing}
@@ -60,6 +89,8 @@ function App() {
               <div className="animate-ping w-24 h-24 bg-white rounded-full"></div>
             ) : recording ? (
               "Listening..."
+            ) : !hasGreeted ? (
+              "Press to start"
             ) : (
               "Talk to Whalie"
             )}

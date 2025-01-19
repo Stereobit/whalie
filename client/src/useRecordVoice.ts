@@ -70,6 +70,32 @@ export const useRecordVoice = () => {
   const chunks = useRef<Blob[]>([]);
   const audioContext = useRef<AudioContext | null>(null);
 
+  const sendTextMessage = async (text: string) => {
+    setProcessing(true);
+    try {
+      const response = await fetch("http://localhost:3000/api/process-text", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ text }),
+      });
+
+      const data: AudioResponse = await response.json();
+
+      if (data.success && data.audioFile) {
+        const audio = new Audio(
+          "http://localhost:3000/audio/" + data.audioFile
+        );
+        await audio.play();
+      }
+    } catch (error) {
+      console.error("Error processing text request:", error);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   const startRecording = () => {
     if (mediaRecorder) {
       mediaRecorder.start();
@@ -152,5 +178,11 @@ export const useRecordVoice = () => {
     };
   }, []);
 
-  return { recording, processing, startRecording, stopRecording };
+  return {
+    recording,
+    processing,
+    startRecording,
+    stopRecording,
+    sendTextMessage,
+  };
 };
