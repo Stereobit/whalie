@@ -5,12 +5,37 @@ import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import convertResponseToAudio from "../../utils/convertResponseToAudio";
 import { Fields, Files, formidable } from "formidable";
 import fs from "fs";
+import cors from "cors";
+import { SYSTEM_PROMPT } from "../../utils/prompts";
 
 // Configure API to handle file uploads
 export const config = {
   api: {
     bodyParser: false,
   },
+};
+
+// Initialize CORS middleware
+const corsMiddleware = cors({
+  origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
+  methods: ["POST"],
+  credentials: true,
+});
+
+// Helper function to run middleware
+const runMiddleware = (
+  req: NextApiRequest,
+  res: NextApiResponse,
+  fn: Function
+) => {
+  return new Promise((resolve, reject) => {
+    fn(req, res, (result: any) => {
+      if (result instanceof Error) {
+        return reject(result);
+      }
+      return resolve(result);
+    });
+  });
 };
 
 const openai = new OpenAI();
@@ -60,8 +85,8 @@ const transcribeAudio = async (audioPath: string) => {
 const getOpenAIResponse = async (message: string) => {
   const chat = new ChatOpenAI();
   const response = await chat.call([
-    new SystemMessage("You are a helpful voice assistant"),
-    new HumanMessage(message),
+    new SystemMessage(SYSTEM_PROMPT),
+    new HumanMessage("Hi Whalie, it's me August."),
   ]);
   return response.text;
 };
@@ -70,6 +95,9 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  // Run the CORS middleware
+  await runMiddleware(req, res, corsMiddleware);
+
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -103,6 +131,7 @@ export default async function handler(
       audioFile: audioFileName,
     });
   } catch (error) {
+    console.error("Error processing audio request", error);
     return res.status(500).json({
       success: false,
       error: "Error processing audio request",

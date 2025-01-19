@@ -122,7 +122,9 @@ export const useRecordVoice = () => {
         const data: AudioResponse = await response.json();
 
         if (data.success && data.audioFile) {
-          const audio = new Audio(data.audioFile);
+          const audio = new Audio(
+            "http://localhost:3000/audio/" + data.audioFile
+          );
           await audio.play();
         }
       } catch (error) {

@@ -1,21 +1,39 @@
-import voice from "elevenlabs-node";
+import { ElevenLabsClient, play } from "elevenlabs";
 import fs from "fs";
 
+const voice = new ElevenLabsClient({
+  apiKey: process.env.ELEVEN_LABS_API_KEY,
+});
+
 const convertResponseToAudio = async (text: string) => {
-  const apiKey = process.env.ELEVEN_LABS_API_KEY;
-  const voiceID = "04sfw7YctY8FqVfgMEIt";
-  const fileName = `${Date.now()}.mp3`;
-  console.log("Converting response to audio...");
-  const audioStream = await voice.textToSpeechStream(apiKey, voiceID, text);
-  const fileWriteStream = fs.createWriteStream("./public/audio/" + fileName);
-  audioStream.pipe(fileWriteStream);
-  return new Promise((resolve, reject) => {
-    fileWriteStream.on("finish", () => {
-      console.log("Audio conversion done...");
-      resolve(fileName);
+  try {
+    const fileName = `${Date.now()}.mp3`;
+
+    // Using "Rachel" voice ID which is a default voice
+    const audioFile = await voice.generate({
+      text,
+      voice: "htzOzB5OEdUz6rqw1dez",
     });
-    audioStream.on("error", reject);
-  });
+
+    // Convert the readable stream to a buffer before writing
+    const chunks: Uint8Array[] = [];
+    for await (const chunk of audioFile) {
+      chunks.push(chunk);
+    }
+    const buffer = Buffer.concat(chunks);
+
+    // Ensure the directory exists
+    const dir = "./public/audio";
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+
+    fs.writeFileSync(dir + "/" + fileName, buffer);
+    return fileName;
+  } catch (error) {
+    console.error("Error generating audio:", error);
+    throw error;
+  }
 };
 
 export default convertResponseToAudio;
