@@ -86,7 +86,7 @@ const getOpenAIResponse = async (message: string) => {
   const chat = new ChatOpenAI();
   const response = await chat.call([
     new SystemMessage(SYSTEM_PROMPT),
-    new HumanMessage("Hi Whalie, it's me August."),
+    new HumanMessage(message),
   ]);
   return response.text;
 };
