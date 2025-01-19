@@ -1,6 +1,10 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { ChatOpenAI } from "@langchain/openai";
-import { HumanMessage, SystemMessage } from "@langchain/core/messages";
+import {
+  HumanMessage,
+  SystemMessage,
+  AIMessage,
+} from "@langchain/core/messages";
 import convertResponseToAudio from "../../utils/convertResponseToAudio";
 import cors from "cors";
 import { SYSTEM_PROMPT } from "../../utils/prompts";
@@ -11,6 +15,9 @@ const corsMiddleware = cors({
   methods: ["POST"],
   credentials: true,
 });
+
+// Store conversations in memory (in production, you'd want to use a proper database)
+const conversations: Record<string, Array<HumanMessage | AIMessage>> = {};
 
 // Helper function to run middleware
 const runMiddleware = (
@@ -29,12 +36,35 @@ const runMiddleware = (
 };
 
 // Helper function to get OpenAI response
-const getOpenAIResponse = async (message: string) => {
+const getOpenAIResponse = async (message: string, conversationId: string) => {
   const chat = new ChatOpenAI();
-  const response = await chat.call([
+
+  // Initialize conversation if it doesn't exist
+  if (!conversations[conversationId]) {
+    conversations[conversationId] = [];
+  }
+
+  // Get previous messages
+  const previousMessages = conversations[conversationId];
+
+  // Construct messages array with system prompt and history
+  const messages = [
     new SystemMessage(SYSTEM_PROMPT),
+    ...previousMessages,
     new HumanMessage(message),
-  ]);
+  ];
+
+  const response = await chat.call(messages);
+
+  // Store the new messages
+  conversations[conversationId].push(new HumanMessage(message));
+  conversations[conversationId].push(new AIMessage(response.text));
+
+  // Keep only last 10 messages to manage context length
+  if (conversations[conversationId].length > 10) {
+    conversations[conversationId] = conversations[conversationId].slice(-10);
+  }
+
   return response.text;
 };
 
@@ -50,7 +80,7 @@ export default async function handler(
   }
 
   try {
-    const { text } = req.body;
+    const { text, conversationId } = req.body;
 
     if (!text) {
       return res.status(400).json({
@@ -59,8 +89,15 @@ export default async function handler(
       });
     }
 
+    if (!conversationId) {
+      return res.status(400).json({
+        success: false,
+        error: "No conversationId provided",
+      });
+    }
+
     // Get OpenAI response using LangChain
-    const aiResponse = await getOpenAIResponse(text);
+    const aiResponse = await getOpenAIResponse(text, conversationId);
 
     // Convert response to audio using ElevenLabs
     const audioFileName = await convertResponseToAudio(aiResponse);
